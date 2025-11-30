@@ -427,4 +427,4 @@ This TTS server includes a plugin for [Pot Desktop](https://github.com/pot-app/p
 
 4. **Configure**: The plugin will automatically connect to `http://localhost:8000/tts` when the server is running
 
-**Note**: The Pot Desktop plugin requires the TTS server to be running. You can configure it to start automatically using the [systemd or Task Scheduler instructions](#running-server-on-startup) below.
+**Note**: The Pot Desktop plugin requires the TTS server to be running. You can configure it to start automatically using the [systemd or Task Scheduler instructions](#running-server-on-startup) above.
