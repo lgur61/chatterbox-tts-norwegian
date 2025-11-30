@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatterbox TTS Demo</title>
+<style>
+    :root {
+        color-scheme: light dark;
+    }
+    body {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: radial-gradient(circle at 20% 20%, rgba(0,140,255,0.12), transparent 30%),
+                    radial-gradient(circle at 80% 0%, rgba(255,170,0,0.16), transparent 26%),
+                    radial-gradient(circle at 50% 80%, rgba(0,220,130,0.12), transparent 30%),
+                    #0b1021;
+        color: #e7ecf1;
+        min-height: 100vh;
+    }
+    .panel {
+        max-width: 840px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 24px;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 10px 60px rgba(0,0,0,0.35);
+    }
+    h1 {
+        margin-top: 0;
+        font-size: 28px;
+        letter-spacing: 0.5px;
+    }
+    p.sub {
+        margin-top: 4px;
+        color: #a8b4c4;
+    }
+    label {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        margin: 18px 0 8px;
+        color: #cdd8e8;
+    }
+    textarea {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.25);
+        color: #e7ecf1;
+        padding: 12px;
+        font-size: 16px;
+        resize: vertical;
+        outline: none;
+    }
+    input[type="range"] {
+        width: 100%;
+        accent-color: #7be0ff;
+    }
+    select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.25);
+        color: #e7ecf1;
+        font-size: 15px;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+    select:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    select:focus {
+        border-color: #7be0ff;
+    }
+    .inline {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+    .hint {
+        margin-top: 6px;
+        color: #8fa3bd;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    button {
+        margin-top: 12px;
+        padding: 12px 16px;
+        background: linear-gradient(120deg, #6ddcff, #7c6cff);
+        border: none;
+        border-radius: 10px;
+        color: #0b1021;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    .status {
+        margin-top: 14px;
+        color: #a8b4c4;
+        min-height: 20px;
+    }
+    audio {
+        width: 100%;
+        margin-top: 16px;
+    }
+</style>
+</head>
+<body>
+<div class="panel">
+    <h1>Chatterbox Norwegian TTS</h1>
+    <p class="sub">Experiment with text, sampling parameters, and voice control. Features formant-preserving pitch shifting for natural-sounding results!</p>
+    <form id="tts-form">
+        <label for="text">Text</label>
+        <textarea id="text" name="text" required placeholder="Skriv inn teksten her..."></textarea>
+
+        <div class="inline">
+            <div>
+                <label for="exaggeration">
+                    <span>Exaggeration</span>
+                    <span id="exaggeration-value">1.00</span>
+                </label>
+                <input type="range" id="exaggeration" name="exaggeration" min="0.1" max="2.0" step="0.05" value="1.0">
+                <div class="hint">Controls prosody expressiveness. Higher = more lively, lower = flatter.</div>
+            </div>
+            <div>
+                <label for="cfg_weight">
+                    <span>CFG weight</span>
+                    <span id="cfg-value">0.50</span>
+                </label>
+                <input type="range" id="cfg_weight" name="cfg_weight" min="0.1" max="1.5" step="0.05" value="0.5">
+                <div class="hint">Classifier-free guidance strength. Higher pushes closer to the text prompt, lower allows more freedom.</div>
+            </div>
+            <div>
+                <label for="temperature">
+                    <span>Temperature</span>
+                    <span id="temperature-value">0.40</span>
+                </label>
+                <input type="range" id="temperature" name="temperature" min="0.1" max="1.5" step="0.05" value="0.4">
+                <div class="hint">Sampling temperature. Higher adds randomness and variety, lower is more deterministic.</div>
+            </div>
+            <div>
+                <label for="speed">
+                    <span>Render speed</span>
+                    <span id="speed-value">1.00</span>
+                </label>
+                <input type="range" id="speed" name="speed" min="0.3" max="1.5" step="0.05" value="1.0">
+                <div class="hint">Server-side time-stretch (pitch preserved). Below 1.0 slows down, above 1.0 speeds up.</div>
+            </div>
+            <div>
+                <label for="pitch">
+                    <span>Pitch (semitones)</span>
+                    <span id="pitch-value">0.00</span>
+                </label>
+                <input type="range" id="pitch" name="pitch" min="-12" max="12" step="0.1" value="0">
+                <div class="hint">Shift pitch without changing speed. Negative lowers, positive raises.</div>
+            </div>
+        </div>
+
+        <label for="speed_algorithm">⏱️ Speed Algorithm (Time-Stretching)</label>
+        <select id="speed_algorithm" name="speed_algorithm">
+            <option value="rubberband" selected>Rubber Band - Recommended (requires pyrubberband; falls back to WSOLA)</option>
+            <option value="">Auto (WSOLA fallback)</option>
+            <option value="wsola">WSOLA - Fast fallback</option>
+            <option value="phase_vocoder">Phase Vocoder - Basic, Good All-Around</option>
+            <option value="phase_vocoder_multiband">Phase Vocoder - Multi-Band Blend</option>
+            <option value="hpss_phase_vocoder">HPSS + Phase Vocoder (requires librosa)</option>
+            <option value="librosa">Librosa - High Quality (requires librosa)</option>
+            <option value="audiotsm">AudioTSM - Optimized WSOLA (requires audiotsm2)</option>
+            <option value="sox">SoX Tempo - High Quality (requires SoX)</option>
+            <option value="ola">OLA - Fast but Lower Quality</option>
+        </select>
+        <div class="hint">Rubber Band is recommended for best quality; if it's not installed the server falls back to WSOLA. Used when speed ≠ 1.0.
+        </div>
+
+        <label for="pitch_algorithm">🎯 Pitch Algorithm (Formant-Preserving)</label>
+        <select id="pitch_algorithm" name="pitch_algorithm">
+            <option value="" selected>Auto (PSOLA if available)</option>
+            <option value="psola">PSOLA (Librosa) - Best for Speech</option>
+            <option value="psola_parselmouth">PSOLA (Praat) - Gold Standard (requires praat-parselmouth)</option>
+            <option value="formant_pv">Formant-Preserving Phase Vocoder (requires librosa)</option>
+        </select>
+        <div class="hint">Controls pitch shifting quality. PSOLA preserves voice character and prevents "chipmunk" effects. Used when pitch ≠ 0.</div>
+
+        <label for="sample_rate">Output Sample Rate</label>
+        <select id="sample_rate" name="sample_rate">
+            <option value="16000">16,000 Hz</option>
+            <option value="22050">22,050 Hz</option>
+            <option value="24000" selected>24,000 Hz (default)</option>
+            <option value="44100">44,100 Hz</option>
+            <option value="48000">48,000 Hz</option>
+        </select>
+        <div class="hint">Choose the WAV output sample rate. Default matches the model; resampling happens server-side.</div>
+
+        <button type="submit" id="generate-btn">Generate Speech</button>
+
+        <div class="status" id="status"></div>
+        <audio id="audio" controls></audio>
+
+        <!-- Preset Management -->
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+            <label style="margin-bottom: 12px;">💾 Presets</label>
+            <div class="inline" style="margin-bottom: 8px;">
+                <div>
+                    <input type="text" id="preset-name" placeholder="Preset name..." style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0, 0, 0, 0.25); color: #e7ecf1; font-size: 15px; outline: none;">
+                </div>
+                <div>
+                    <button type="button" id="save-preset-btn" style="width: 90%; margin-top: 0; margin-left: 5%; background: linear-gradient(120deg, #4CAF50, #45a049);">Save Preset</button>
+                </div>
+            </div>
+            <div class="inline">
+                <div>
+                    <select id="preset-select" style="width: 100%;">
+                        <option value="">-- Load Preset --</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button type="button" id="delete-preset-btn" style="margin-top: 0; background: linear-gradient(120deg, #f44336, #da190b); font-size: 14px;">Delete</button>
+                    <button type="button" id="export-presets-btn" style="margin-top: 0; background: linear-gradient(120deg, #2196F3, #0b7dda); font-size: 14px;">Export</button>
+                </div>
+            </div>
+            <div style="margin-top: 8px;">
+                <input type="file" id="import-presets-input" accept=".json" style="display: none;">
+                <button type="button" id="import-presets-btn" style="width: 100%; margin-top: 0; background: linear-gradient(120deg, #FF9800, #f57c00); font-size: 14px;">Import Presets</button>
+            </div>
+            <div class="hint" style="margin-top: 8px;">Save your favorite settings as presets and export/import them between devices.</div>
+        </div>
+
+       
+    </form>
+</div>
+
+<script>
+const form = document.getElementById('tts-form');
+const audioEl = document.getElementById('audio');
+const statusEl = document.getElementById('status');
+const button = document.getElementById('generate-btn');
+
+function syncLabel(id, outputId) {
+    const el = document.getElementById(id);
+    const out = document.getElementById(outputId);
+    const format = (value) => Number.parseFloat(value).toFixed(2);
+    el.addEventListener('input', () => { out.textContent = format(el.value); });
+    out.textContent = format(el.value);
+}
+
+syncLabel('exaggeration', 'exaggeration-value');
+syncLabel('cfg_weight', 'cfg-value');
+syncLabel('temperature', 'temperature-value');
+syncLabel('speed', 'speed-value');
+syncLabel('pitch', 'pitch-value');
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.textContent = 'Generating...';
+    button.disabled = true;
+
+    const payload = {
+        text: document.getElementById('text').value,
+        exaggeration: parseFloat(document.getElementById('exaggeration').value),
+        cfg_weight: parseFloat(document.getElementById('cfg_weight').value),
+        temperature: parseFloat(document.getElementById('temperature').value),
+        speed: parseFloat(document.getElementById('speed').value),
+        pitch: parseFloat(document.getElementById('pitch').value),
+        sample_rate: parseInt(document.getElementById('sample_rate').value, 10),
+    };
+
+    // Get separate algorithms
+    const speedAlgo = document.getElementById('speed_algorithm').value;
+    const pitchAlgo = document.getElementById('pitch_algorithm').value;
+
+    payload.speed_algorithm = speedAlgo ? speedAlgo : null;
+    payload.pitch_algorithm = pitchAlgo ? pitchAlgo : null;
+
+    try {
+        const response = await fetch('/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || 'Request failed');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        audioEl.src = url;
+        await audioEl.play();
+        statusEl.textContent = 'Done! Scroll up to tweak parameters or try more text.';
+    } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+    } finally {
+        button.disabled = false;
+    }
+});
+
+// ===== Preset Management =====
+const PRESETS_STORAGE_KEY = 'chatterbox_tts_presets';
+
+// Get all current form parameters
+function getCurrentParameters() {
+    return {
+        text: document.getElementById('text').value,
+        exaggeration: parseFloat(document.getElementById('exaggeration').value),
+        cfg_weight: parseFloat(document.getElementById('cfg_weight').value),
+        temperature: parseFloat(document.getElementById('temperature').value),
+        speed: parseFloat(document.getElementById('speed').value),
+        pitch: parseFloat(document.getElementById('pitch').value),
+        speed_algorithm: document.getElementById('speed_algorithm').value,
+        pitch_algorithm: document.getElementById('pitch_algorithm').value,
+        sample_rate: parseInt(document.getElementById('sample_rate').value, 10)
+    };
+}
+
+// Set form parameters from preset
+function setParameters(params) {
+    if (params.text !== undefined) document.getElementById('text').value = params.text;
+    if (params.exaggeration !== undefined) {
+        document.getElementById('exaggeration').value = params.exaggeration;
+        document.getElementById('exaggeration-value').textContent = params.exaggeration.toFixed(2);
+    }
+    if (params.cfg_weight !== undefined) {
+        document.getElementById('cfg_weight').value = params.cfg_weight;
+        document.getElementById('cfg-value').textContent = params.cfg_weight.toFixed(2);
+    }
+    if (params.temperature !== undefined) {
+        document.getElementById('temperature').value = params.temperature;
+        document.getElementById('temperature-value').textContent = params.temperature.toFixed(2);
+    }
+    if (params.speed !== undefined) {
+        document.getElementById('speed').value = params.speed;
+        document.getElementById('speed-value').textContent = params.speed.toFixed(2);
+    }
+    if (params.pitch !== undefined) {
+        document.getElementById('pitch').value = params.pitch;
+        document.getElementById('pitch-value').textContent = params.pitch.toFixed(2);
+    }
+    if (params.speed_algorithm !== undefined) {
+        document.getElementById('speed_algorithm').value = params.speed_algorithm || '';
+    }
+    if (params.pitch_algorithm !== undefined) {
+        document.getElementById('pitch_algorithm').value = params.pitch_algorithm || '';
+    }
+    if (params.sample_rate !== undefined) {
+        document.getElementById('sample_rate').value = params.sample_rate;
+    }
+}
+
+// Load presets from localStorage
+function loadPresets() {
+    try {
+        const stored = localStorage.getItem(PRESETS_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+        console.error('Failed to load presets:', e);
+        return {};
+    }
+}
+
+// Save presets to localStorage
+function savePresets(presets) {
+    try {
+        localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+    } catch (e) {
+        console.error('Failed to save presets:', e);
+        alert('Failed to save presets to local storage');
+    }
+}
+
+// Update preset dropdown
+function updatePresetSelect() {
+    const presets = loadPresets();
+    const select = document.getElementById('preset-select');
+
+    // Clear existing options except the first one
+    select.innerHTML = '<option value="">-- Load Preset --</option>';
+
+    // Add presets
+    Object.keys(presets).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+// Save current parameters as preset
+document.getElementById('save-preset-btn').addEventListener('click', () => {
+    const name = document.getElementById('preset-name').value.trim();
+    if (!name) {
+        alert('Please enter a preset name');
+        return;
+    }
+
+    const presets = loadPresets();
+    presets[name] = getCurrentParameters();
+    savePresets(presets);
+
+    updatePresetSelect();
+    document.getElementById('preset-name').value = '';
+    statusEl.textContent = `Preset "${name}" saved!`;
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+});
+
+// Load preset
+document.getElementById('preset-select').addEventListener('change', (e) => {
+    const name = e.target.value;
+    if (!name) return;
+
+    const presets = loadPresets();
+    if (presets[name]) {
+        setParameters(presets[name]);
+        statusEl.textContent = `Preset "${name}" loaded!`;
+        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+    }
+});
+
+// Delete preset
+document.getElementById('delete-preset-btn').addEventListener('click', () => {
+    const name = document.getElementById('preset-select').value;
+    if (!name) {
+        alert('Please select a preset to delete');
+        return;
+    }
+
+    if (!confirm(`Delete preset "${name}"?`)) {
+        return;
+    }
+
+    const presets = loadPresets();
+    delete presets[name];
+    savePresets(presets);
+
+    updatePresetSelect();
+    statusEl.textContent = `Preset "${name}" deleted`;
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+});
+
+// Export presets
+document.getElementById('export-presets-btn').addEventListener('click', () => {
+    const presets = loadPresets();
+    const dataStr = JSON.stringify(presets, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chatterbox-tts-presets-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    statusEl.textContent = 'Presets exported!';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+});
+
+// Import presets
+document.getElementById('import-presets-btn').addEventListener('click', () => {
+    document.getElementById('import-presets-input').click();
+});
+
+document.getElementById('import-presets-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const imported = JSON.parse(event.target.result);
+
+            // Validate imported data
+            if (typeof imported !== 'object' || imported === null) {
+                throw new Error('Invalid preset format');
+            }
+
+            const presets = loadPresets();
+            let importCount = 0;
+
+            // Merge imported presets
+            for (const [name, params] of Object.entries(imported)) {
+                if (presets[name]) {
+                    if (!confirm(`Preset "${name}" already exists. Overwrite?`)) {
+                        continue;
+                    }
+                }
+                presets[name] = params;
+                importCount++;
+            }
+
+            savePresets(presets);
+            updatePresetSelect();
+
+            statusEl.textContent = `Imported ${importCount} preset(s)!`;
+            setTimeout(() => { statusEl.textContent = ''; }, 2000);
+        } catch (err) {
+            alert('Failed to import presets: ' + err.message);
+        }
+
+        // Reset file input
+        e.target.value = '';
+    };
+
+    reader.readAsText(file);
+});
+
+// Initialize default presets on first load
+function initializeDefaultPresets() {
+    const presets = loadPresets();
+
+    // Only add defaults if no presets exist yet
+    if (Object.keys(presets).length === 0) {
+        // Experiment A from README: High-quality slow speech with Rubberband
+        presets['Experiment A'] = {
+            text: 'Denne teksten kan erstattes med hvilken som helst tekst du vil ha. I denne tekstboksen kan du skrive inn eller lime inn din egen tekst. Tykke tekst med musen, klikke på stemmeknappen, og nevrale nettverk vil bare uttale det. Det er behagelig.',
+            exaggeration: 1.00,
+            cfg_weight: 0.15,
+            temperature: 0.30,
+            speed: 0.70,
+            pitch: 0.0,
+            speed_algorithm: 'rubberband',
+            pitch_algorithm: '',
+            sample_rate: 48000
+        };
+
+        savePresets(presets);
+    }
+}
+
+// Initialize preset dropdown on page load
+initializeDefaultPresets();
+updatePresetSelect();
+</script>
+</body>
+</html>

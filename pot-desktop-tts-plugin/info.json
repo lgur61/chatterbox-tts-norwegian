@@ -1,0 +1,87 @@
+{
+  "id": "plugin.com.pot-app.chatterbox_tts_no",
+  "plugin_type": "tts",
+  "icon": "norway.svg",
+  "display": "Chatterbox NO",
+  "homepage": "https://github.com/akhbar/chatterbox-tts-norwegian",
+  "needs": [
+    {
+      "key": "serverUrl",
+      "display": "Server URL (e.g. http://localhost:8000/tts)",
+      "type": "input"
+    },
+    {
+      "key": "exaggeration",
+      "display": "Exaggeration (e.g. 1.0)",
+      "type": "input"
+    },
+    {
+      "key": "cfgWeight",
+      "display": "CFG Weight (e.g. 0.15)",
+      "type": "input"
+    },
+    {
+      "key": "temperature",
+      "display": "Temperature (e.g. 0.30)",
+      "type": "input"
+    },
+    {
+      "key": "speed",
+      "display": "Speed (e.g. 0.70)",
+      "type": "input"
+    },
+    {
+      "key": "pitch",
+      "display": "Pitch (e.g. 0)",
+      "type": "input"
+    },
+    {
+      "key": "speedAlgorithm",
+      "display": "Speed Algorithm",
+      "type": "select",
+      "options": {
+        "auto": "Auto (fallback to WSOLA)",
+        "rubberband": "Rubber Band (recommended)",
+        "wsola": "WSOLA",
+        "phase_vocoder": "Phase Vocoder",
+        "phase_vocoder_multiband": "Phase Vocoder (Multiband)",
+        "hpss_phase_vocoder": "HPSS + Phase Vocoder",
+        "librosa": "Librosa",
+        "audiotsm": "AudioTSM",
+        "sox": "SoX",
+        "ola": "OLA"
+      }
+    },
+    {
+      "key": "pitchAlgorithm",
+      "display": "Pitch Algorithm",
+      "type": "select",
+      "options": {
+        "auto": "Auto (PSOLA if available)",
+        "psola": "PSOLA (librosa)",
+        "psola_parselmouth": "PSOLA (Praat)",
+        "formant_pv": "Formant-preserving Phase Vocoder"
+      }
+    },
+    {
+      "key": "sampleRate",
+      "display": "Sample Rate (exp 48000)",
+      "type": "select",
+      "options": {
+        "16000": 16000,
+        "22050": 22050,
+        "24000": 24000,
+        "44100": 44100,
+        "48000": 48000
+      }
+    }
+  ],
+  "language": {
+    "en": "en",
+    "no": "no",
+    "nb": "no",
+    "nb_no": "no",
+    "nn_no": "no",
+    "nn": "no"
+  }
+}
